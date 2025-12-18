@@ -1,3 +1,4 @@
+HEAD
 Outgroup Verification via Comparative Retrotransposon Analysis
 Introduction
 This pipeline aims to verify the phylogenetic outgroup relationship among three taxa. By distinguishing between random genomic deletions and complex biological insertions (specifically Retrotransposons and other mobile genetic elements), we can infer high-confidence evolutionary branching.
@@ -28,3 +29,4 @@ Output: results/last_alignment/seq1_seq2_seq3_joined.maf
 Step 3: Repeat Discovery and CharacterizationIdentify de novo repeat families and mask the genomes to detect insertion signatures.Bashbash scripts/repeat.sh
 Process: Sanitizes headers $\rightarrow$ BuildDatabase $\rightarrow$ RepeatModeler $\rightarrow$ RepeatMasker.Key Output: results/repeat_modeler/families.fa (The custom repeat library).
 Step 4: Integration and Outgroup VerificationExtract Gaps: Identify regions in the .maf file where one taxon lacks sequence relative to the others.Verify RT Identity: Check if the insertion sequence contains Reverse Transcriptase (RT) domains or processed genes.Phylogenetic Testing: Extract the insertion sequences and run ML/NJ trees to confirm monophyly.4. Methodology NotesHeader Sanitization: repeat.sh renames headers to seq_1, seq_2... to prevent RepeatModeler crashes caused by complex NCBI naming conventions.Filtering: Alignment quality is controlled via last-split to ensure one-to-one orthology before integration.Parsimony: Substitution trends and insertion events are interpreted based on the principle of parsimony.
+
