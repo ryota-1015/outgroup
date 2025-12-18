@@ -1,0 +1,6 @@
+data/
+results/
+log/
+*.zip
+*.fasta
+*.maf
