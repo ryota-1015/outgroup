@@ -26,9 +26,9 @@ if [ -s "$OUT_DIR/shared_BC_vs_A.bed" ]; then
     echo "Extracting sequences for BC markers..."
     # Using GCA_002775205.2 (Taxon B) as the sequence reference
     bedtools getfasta \
-        -fi "$RESULTS_DIR/GCA_002775205.2.fasta" \
+        -fi "$RESULTS_DIR/GCA_002775205.2.fasta.masked" \
         -bed "$OUT_DIR/shared_BC_vs_A.bed" \
-        -fo "$OUT_DIR/BC_shared_markers.fasta"
+        -fo "$OUT_DIR/BC_shared_markers.fasta.masked"
 fi
 
 # Case: A and B share it, C lacks it (C is Outgroup)
@@ -36,18 +36,18 @@ if [ -s "$OUT_DIR/shared_AB_vs_C.bed" ]; then
     echo "Extracting sequences for AB markers..."
     # Using GCA_001444195.3 (Taxon A) as the sequence reference
     bedtools getfasta \
-        -fi "$RESULTS_DIR/GCA_001444195.3.fasta" \
+        -fi "$RESULTS_DIR/GCA_001444195.3.fasta.masked" \
         -bed "$OUT_DIR/shared_AB_vs_C.bed" \
-        -fo "$OUT_DIR/AB_shared_markers.fasta"
+        -fo "$OUT_DIR/AB_shared_markers.fasta.masked"
 fi
 
 # Case: A and C share it, B lacks it (B is Outgroup)
 if [ -s "$OUT_DIR/shared_AC_vs_B.bed" ]; then
     echo "Extracting sequences for AC markers..."
     bedtools getfasta \
-        -fi "$RESULTS_DIR/GCA_001444195.3.fasta" \
+        -fi "$RESULTS_DIR/GCA_001444195.3.fasta.masked" \
         -bed "$OUT_DIR/shared_AC_vs_B.bed" \
-        -fo "$OUT_DIR/AC_shared_markers.fasta"
+        -fo "$OUT_DIR/AC_shared_markers.fasta.masked"
 fi
 
 echo "--- Analysis Complete ---"
