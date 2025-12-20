@@ -15,59 +15,40 @@ mkdir -p "$OUT_DIR"
 # Keep the log redirection as you liked it
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "--- Step 1: Extracting Shared Patterns from MAF ---"
-# Run the new python script
-# Note: It generates shared_BC_vs_A.bed, shared_AB_vs_C.bed, shared_AC_vs_B.bed
+echo "--- Step 1: Extracting Shared Patterns from MAF (>= 50bp) ---"
 python3 extract_gaps.py "$MAF_FILE"
-
-# Move them to the candidate directory
 mv shared_*.bed "$OUT_DIR/"
 
-echo "--- Step 2: Intersecting with RepeatMasker Results ---"
+echo "--- Step 2: Extracting Marker Sequences for Phylogenetic Analysis ---"
 
-# Helper function to convert RepeatMasker .out to valid TAB-delimited BED
-convert_rm_to_bed() {
-    local input_out="$1"
-    local output_bed="${input_out}.bed"
-    # Skips 3 header lines, extracts: Chrom(5), Start(6), End(7), Family(11)
-    awk 'NR > 3 {print $5 "\t" $6 "\t" $7 "\t" $11}' "$input_out" > "$output_bed"
-    echo "$output_bed"
-}
-
-# Verification Case: B and C share it, A lacks it (A is Outgroup)
+# Case: B and C share it, A lacks it (A is Outgroup)
 if [ -s "$OUT_DIR/shared_BC_vs_A.bed" ]; then
-    echo "Processing shared_BC_vs_A..."
-    # Convert .out to temporary BED for bedtools
-    RM_BED=$(convert_rm_to_bed "$REPEAT_DIR/GCA_002775205.2.fasta.out")
-    
-    bedtools intersect \
-        -a "$OUT_DIR/shared_BC_vs_A.bed" \
-        -b "$RM_BED" \
-        -wa -wb > "$OUT_DIR/BC_shared_evidence.txt"
+    echo "Extracting sequences for BC markers..."
+    # Using GCA_002775205.2 (Taxon B) as the sequence reference
+    bedtools getfasta \
+        -fi "$RESULTS_DIR/GCA_002775205.2.fasta" \
+        -bed "$OUT_DIR/shared_BC_vs_A.bed" \
+        -fo "$OUT_DIR/BC_shared_markers.fasta"
 fi
 
-# Verification Case: A and B share it, C lacks it (C is Outgroup)
+# Case: A and B share it, C lacks it (C is Outgroup)
 if [ -s "$OUT_DIR/shared_AB_vs_C.bed" ]; then
-    echo "Processing shared_AB_vs_C..."
-    RM_BED=$(convert_rm_to_bed "$REPEAT_DIR/GCA_001444195.3.fasta.out")
-    
-    bedtools intersect \
-        -a "$OUT_DIR/shared_AB_vs_C.bed" \
-        -b "$RM_BED" \
-        -wa -wb > "$OUT_DIR/AB_shared_evidence.txt"
+    echo "Extracting sequences for AB markers..."
+    # Using GCA_001444195.3 (Taxon A) as the sequence reference
+    bedtools getfasta \
+        -fi "$RESULTS_DIR/GCA_001444195.3.fasta" \
+        -bed "$OUT_DIR/shared_AB_vs_C.bed" \
+        -fo "$OUT_DIR/AB_shared_markers.fasta"
 fi
 
-# Verification Case: A and C share it, B lacks it (B is Outgroup)
+# Case: A and C share it, B lacks it (B is Outgroup)
 if [ -s "$OUT_DIR/shared_AC_vs_B.bed" ]; then
-    echo "Processing shared_AC_vs_B..."
-    # Still using Species A (CM008938.1) as the reference for coordinates
-    RM_BED=$(convert_rm_to_bed "$REPEAT_DIR/GCA_001444195.3.fasta.out")
-    
-    bedtools intersect \
-        -a "$OUT_DIR/shared_AC_vs_B.bed" \
-        -b "$RM_BED" \
-        -wa -wb > "$OUT_DIR/AC_shared_evidence.txt"
+    echo "Extracting sequences for AC markers..."
+    bedtools getfasta \
+        -fi "$RESULTS_DIR/GCA_001444195.3.fasta" \
+        -bed "$OUT_DIR/shared_AC_vs_B.bed" \
+        -fo "$OUT_DIR/AC_shared_markers.fasta"
 fi
 
 echo "--- Analysis Complete ---"
-echo "Check output files in $OUT_DIR to identify which shared insertions contain RT domains."
+echo "FASTA files are ready in $OUT_DIR for tree building."
