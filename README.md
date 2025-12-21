@@ -1,32 +1,112 @@
-HEAD
-Outgroup Verification via Comparative Retrotransposon Analysis
-Introduction
-This pipeline aims to verify the phylogenetic outgroup relationship among three taxa. By distinguishing between random genomic deletions and complex biological insertions (specifically Retrotransposons and other mobile genetic elements), we can infer high-confidence evolutionary branching.
+Outgroup Analysis via Genomic Fossils
+Project started: 2025-12-16.
 
-Core Logic
-Deletion vs. Insertion: Random deletions are common and uninformative for outgroup rooting. However, a shared complex insertion (Retrotransposon) at a specific locus is a strong synapomorphy.
-Verification Criteria:If Taxon A has a gap while B and C share a Retrotransposon (RT) at the same position, A is confirmed as the outgroup.If B and C have a gap while A has an RT, A is confirmed as the outgroup.Simple gaps without identifiable insertion elements are treated as inconclusive deletions.
+Last Update: 2025-12-21 Ryota Ishii
 
-1. DependenciesThe following tools must be installed and available in your $PATH:
-NCBI Datasets CLI: Genome acquisition.
-LAST: Pairwise and multiple sequence alignment.
-RepeatModeler2 & RepeatMasker: De novo repeat discovery and characterization.
-bedtools: Coordinate intersection (integration phase).
-Phylogenetic Tools: ML (e.g., IQ-TREE) and NJ (e.g., MEGA/PHYLIP).
+I have created scripts to identify the plausible outgroup among three taxa by detecting "Biological Fossils" (SINEs/Retrotransposons) in genomic alignments.
 
-2. Project StructureThe scripts expect the following directory hierarchy:Plaintext~/outgroup/
-├── data/       # Downloaded FASTA genomes
-├── log/        # Timestamped execution logs
-├── results/    # Alignment (.maf) and Repeat (.fa, .out) outputs
-└── scripts/    # Shell and Python scripts
+project directories
 
-3. Usage Pipeline
-Step 1: Data AcquisitionDownload the target genome assemblies from NCBI.Bash# Edit ACCESSIONS in the script if necessary
-bash scripts/dwl.sh
-Step 2: Whole-Genome Alignment (WGA)Perform 3-way alignment using LAST. The first argument should be the intended outgroup/reference.Bashcd scripts
-bash align.sh <Ref_A.fasta> <Query_B.fasta> <Query_C.fasta>
-Output: results/last_alignment/seq1_seq2_seq3_joined.maf
-Step 3: Repeat Discovery and CharacterizationIdentify de novo repeat families and mask the genomes to detect insertion signatures.Bashbash scripts/repeat.sh
-Process: Sanitizes headers $\rightarrow$ BuildDatabase $\rightarrow$ RepeatModeler $\rightarrow$ RepeatMasker.Key Output: results/repeat_modeler/families.fa (The custom repeat library).
-Step 4: Integration and Outgroup VerificationExtract Gaps: Identify regions in the .maf file where one taxon lacks sequence relative to the others.Verify RT Identity: Check if the insertion sequence contains Reverse Transcriptase (RT) domains or processed genes.Phylogenetic Testing: Extract the insertion sequences and run ML/NJ trees to confirm monophyly.4. Methodology NotesHeader Sanitization: repeat.sh renames headers to seq_1, seq_2... to prevent RepeatModeler crashes caused by complex NCBI naming conventions.Filtering: Alignment quality is controlled via last-split to ensure one-to-one orthology before integration.Parsimony: Substitution trends and insertion events are interpreted based on the principle of parsimony.
+'''
+outgroup/
+./README.md: project documentation
+./data/: genomic fasta files downloaded from NCBI
+./log/: execution logs for tracking pipeline progress
+./scripts/:
+  ├── dwl.sh             # Data acquisition
+  ├── align.sh           # LAST MSA pipeline
+  ├── repeat_modeler.sh  # De novo repeat library building
+  ├── repeat_masking.sh  # Genomic masking
+  ├── bed.sh             # RM .out to BED conversion
+  ├── integrate.sh       # Gap extraction & fasta retrieval
+  ├── extract_gaps.py    # Pattern matching logic (Python)
+  └── report.sh          # Summary report & stringency filter
+./results/:
+  ├── last_alignment/    # MAF files and LAST DB
+  ├── repeat_modeler/    # Custom repeat libraries and DBs
+  ├── candidate_insertions_50bp/
+  └── candidate_insertions_100bp/
+data
+The project utilizes three genomic assemblies (Fasta format):
 
+'''
+./data/GCA_036418095.1.fasta  # Species C
+./data/GCA_002775205.2.fasta  # Species A
+./data/GCA_001444195.3.fasta  # Species B
+scripts
+
+dwl.sh
+# Downloads target GCA accessions using the NCBI datasets tool.
+bash dwl.sh
+
+align.sh
+# Runs the LAST alignment pipeline.
+# Usage: ./align.sh <Ref> <Query1> <Query2>
+./align.sh GCA_002775205.2.fasta GCA_001444195.3.fasta GCA_036418095.1.fasta
+
+repeat_modeler.sh
+# This script builds a database from the reference genome and runs RepeatModeler to identify de novo repeat families.
+bash repeat_modeler.sh
+# Build the RepeatModeler database
+# BuildDatabase -name "${DB_NAME}" "${PREP_FASTA}"
+# Run the RepeatModeler engine to find de novo families
+# RepeatModeler -database "${DB_NAME}" -pa "${THREADS}" -engine ncbi
+# Edit for own dataset: Modify the REF_FASTA variable to point to your reference genome. The script creates a families.fa file which is required for masking.
+
+repeat_masking.sh
+# Runs RepeatMasker using the library generated by RepeatModeler.
+bash repeat_masking.sh
+
+integrate.sh
+# Executes the Python extraction logic and retrieves sequences using bedtools getfasta.
+bash integrate.sh
+
+report.sh
+# Summarizes findings and applies high-stringency filters ($ \ge 120\text{ bp}$).
+./report.sh
+
+output
+results/repeat_modeler
+Contains the de novo repeat library.
+
+Bash
+
+# Look for the classified consensus library
+ls -lh ../results/repeat_modeler/families.fa
+results/last_alignment
+Contains the final MSA file: seq1_seq2_seq3_joined.maf.
+
+Bash
+
+ls -lh ../results/last_alignment/seq1_seq2_seq3_joined.maf
+results/candidate_insertions_100bp
+Extracted FASTA files for each phylogenetic pattern.
+
+Bash
+
+find ../results/candidate_insertions_100bp -name "*.fasta" | xargs grep -c ">"
+How to check results
+1. Evaluate Repeat Landscape
+Check the .tbl file generated during masking to see the distribution of SINEs vs LINEs in your taxa:
+
+Bash
+
+cat ../results/GCA_002775205.2.fasta.tbl
+2. Identify SINE Fingerprints
+Check the lengths of the longest extracted sequences to confirm they match a SINE profile (~135-138bp):
+
+Bash
+
+awk '/^>/ {if (seqlen) print seqlen; seqlen=0; next} {seqlen += length($0)} END {print seqlen}' ../results/candidate_insertions_100bp/AC_shared.fasta | sort -rn | head -n 5
+3. Outgroup Determination
+Examine the OUTGROUP VERDICT in the report. The pattern with the highest count of shared markers determines the sister taxa.
+
+Bash
+
+cat ../log/final_outgroup_report.log
+references
+LAST: https://gitlab.com/mcfrith/last
+
+RepeatModeler/RepeatMasker: https://www.repeatmasker.org/
+
+SINE Phylogenomics: Shedlock & Okada (2000), SINE insertions: Powerful tools for molecular systematics.
