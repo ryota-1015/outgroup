@@ -34,9 +34,9 @@ on AMF fungi. Alignment run twice (G. rosea ref / G. margarita ref) to assess re
 - [x] Write tasks/todo.md
 
 #### Data Acquisition
-- [ ] Download 3 genomes (dwl.sh): GCA_003550325.1, GCA_009809945.1, GCA_910591775.1
-- [ ] Verify genome FASTA sizes (actual vs estimate)
-- [ ] Confirm ≥60 GB free disk before alignment
+- [x] Download 3 genomes (dwl.sh): GCA_003550325.1, GCA_009809945.1, GCA_910591775.1
+- [x] Verify genome FASTA sizes: rosea=550MB, margarita=748MB, dentiscutata=183MB
+- [x] Confirm ≥60 GB free disk: 3.1 TB available
 
 #### Repeat Library
 - [ ] RepeatModeler: G. rosea (GCA_003550325.1)

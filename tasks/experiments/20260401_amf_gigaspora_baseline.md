@@ -25,8 +25,12 @@ with B (*G. margarita*) as seq1 — to assess how much the reference choice infl
 counts for topologies including that species.
 
 ## System Info
+- **Machine:** biohazard (shared HPC), 64 CPU cores, ~15 users
+- **CPU policy:** Use < 1/4 of cores = < 16 cores per job. All scripts set to 8 threads.
+  - `repeat_masking.sh` patched: THREADS 16 → 8
 - **Available disk (/big):** 3.1 TB free (of 22 TB; 85% used) — sufficient
-- **Estimated data footprint:** ~1.5 GB FASTA + ~11–17 GB RepeatModeler temp + ~2–4 GB masked + ~10–40 GB MAF (≤ 65 GB total)
+- **Actual FASTA sizes:** G. rosea 550 MB, G. margarita 748 MB, D. heterogama 183 MB
+- **Estimated data footprint:** ~1.5 GB FASTA + ~10–16 GB RepeatModeler temp + ~2–4 GB masked + ~10–40 GB MAF (≤ 65 GB total)
 
 ## Step Log
 
@@ -39,15 +43,17 @@ counts for topologies including that species.
 ### Phase 1: tasks/todo.md updated ✓
 - Added AMF confirmation run section with full checklist
 
-### Phase 2: Download genomes (IN PROGRESS)
+### Phase 2: Download genomes ✓
 - Command: `bash scripts/dwl.sh GCA_003550325.1 GCA_009809945.1 GCA_910591775.1`
-- Status: Running (background job b5irtbxyi)
-- Log: `log/dwl_<timestamp>.log`
-- Expected: `data/GCA_003550325.1.fasta`, `data/GCA_009809945.1.fasta`, `data/GCA_910591775.1.fasta`
+- **Issue:** `unzip` returned exit code 1 (overwrite warnings) — `set -euo pipefail` treated as failure, skipping rename step
+- **Recovery:** All 3 FNA files were in `ncbi_dataset/data/`; manually moved to `data/GCA_*.fasta`
+- **Lesson:** Add `unzip` return code tolerance to `dwl.sh` in a future cleanup
 
-### Phase 3: Verify genome sizes
-- [ ] Check actual sizes after download
-- Estimated: G. rosea ~700 Mb, G. margarita ~540 Mb, D. heterogama ~300–400 Mb
+### Phase 3: Verify genome sizes ✓
+- G. rosea (GCA_003550325.1): **550 MB**
+- G. margarita (GCA_009809945.1): **748 MB**
+- D. heterogama (GCA_910591775.1): **183 MB**
+- Available disk: 3.1 TB free — no constraints
 
 ### Phase 4: RepeatModeler (all 3 species)
 - [ ] G. rosea: `bash scripts/repeat_modeler.sh GCA_003550325.1.fasta`

@@ -29,7 +29,7 @@ LOG_FILE="$LOG_DIR/repeat_masking_${TIMESTAMP}.log"
 LIBRARY="$1"
 shift
 FASTAS=("$@")
-THREADS=16
+THREADS=8  # biohazard shared machine: keep to < 1/4 of 64 cores
 
 # --- Validate library ---
 if [ ! -f "$LIBRARY" ]; then
