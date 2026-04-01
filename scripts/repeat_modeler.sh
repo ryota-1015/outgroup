@@ -32,6 +32,9 @@ LIBRARY_FA="families.fa"
 LIBRARY_PATH="$REPEAT_RESULTS_DIR/$LIBRARY_FA"
 THREADS=8
 
+# --- Environment ---
+module load repeatmodeler/2.0.5
+
 # --- Setup ---
 mkdir -p "$REPEAT_RESULTS_DIR" "$LOG_DIR"
 echo "--- $(date): Starting RepeatModeler ---" > "$LOG_FILE"
