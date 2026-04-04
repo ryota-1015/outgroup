@@ -56,11 +56,27 @@ counts for topologies including that species.
 - Available disk: 3.1 TB free — no constraints
 
 ### Phase 4: RepeatModeler (all 3 species)
-- [ ] G. rosea: `bash scripts/repeat_modeler.sh GCA_003550325.1.fasta`
-- [ ] G. margarita: `bash scripts/repeat_modeler.sh GCA_009809945.1.fasta`
-- [ ] D. heterogama: `bash scripts/repeat_modeler.sh GCA_910591775.1.fasta`
-- [ ] Merge: `cat .../families.fa ... > results/repeat_modeler/merged_library.fa`
-- Estimated runtime: 23–64 h total (8 cores)
+**Note:** Background jobs via Claude Code are children of the session process and get killed
+on session disconnect. All long-running jobs MUST be launched inside `tmux`.
+
+**Bugs fixed during this phase:**
+- `repeat_modeler.sh`: missing `module load repeatmodeler/2.0.5` → added
+- `repeat_modeler.sh`: `LIBRARY_FA="families.fa"` wrong → fixed to `${DB_BASENAME}-families.fa`
+- `repeat_masking.sh`: THREADS 16 → 8 (biohazard CPU policy: < 1/4 of 64 cores)
+- README: updated `families.fa` references to `<genome>-families.fa`; added tmux section
+
+**Run history (G. rosea):**
+- Attempt 1 (2026-04-01): exit 127 — BuildDatabase not found (module not loaded)
+- Attempt 2 (2026-04-01 02:19): killed at round-6 ~batch 995/9003 (session disconnect)
+- Attempt 3 (2026-04-04 07:01): resumed via -recoverDir; killed at round-6 ~batch 1596/9126
+- Attempt 4 (2026-04-04): resumed via -recoverDir in tmux session "repeatmodeler" ← CURRENT
+
+**G. rosea:** round-6 in progress (3rd recovery attempt, tmux session)
+**G. margarita:** queued
+**D. heterogama:** queued
+
+Estimated completion: ~5 days total from start
+- Merge command: `cat results/repeat_modeler/GCA_003550325.1-families.fa results/repeat_modeler/GCA_009809945.1-families.fa results/repeat_modeler/GCA_910591775.1-families.fa > results/repeat_modeler/merged_library.fa`
 
 ### Phase 5: RepeatMasker
 - [ ] `bash scripts/repeat_masking.sh results/repeat_modeler/merged_library.fa GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`

@@ -48,6 +48,30 @@ outgroup/
 
 ---
 
+## Long-running steps and session persistence
+
+Steps 2 (alignment) and 3 (RepeatModeler) can take **days** on large genomes
+(e.g. AMF fungi with >500 Mb assemblies). Always run them inside a `tmux`
+session so they survive SSH disconnection or session timeout:
+
+```bash
+tmux new-session -s repeatmodeler          # create persistent session
+# ... run your commands ...
+# detach with Ctrl-b d  (session keeps running)
+tmux attach -t repeatmodeler               # reconnect later to check progress
+```
+
+To monitor progress without attaching:
+```bash
+# Check latest RepeatModeler log
+tail -20 log/repeat_modeler_*.log | tail -20
+
+# Check latest alignment log
+tail -20 log/last_align_*.log | tail -20
+```
+
+---
+
 ## Pipeline usage
 
 All scripts are argument-driven and runnable from any directory.
@@ -81,12 +105,12 @@ bash repeat_modeler.sh GCA_009914755.4.fasta
 
 Sanitizes the reference FASTA headers, builds a RepeatModeler database,
 and runs RepeatModeler.
-Output: `results/repeat_modeler/families.fa`
+Output: `results/repeat_modeler/<genome>-families.fa`
 
 ### 4. Soft-mask all three genomes
 
 ```bash
-bash repeat_masking.sh results/repeat_modeler/families.fa \
+bash repeat_masking.sh results/repeat_modeler/<genome>-families.fa \
     GCA_009914755.4.fasta GCA_028858775.2.fasta GCA_028885655.2.fasta
 ```
 
@@ -161,7 +185,7 @@ outgroup:
 
 ```bash
 # Repeat library
-ls -lh results/repeat_modeler/families.fa
+ls -lh results/repeat_modeler/*-families.fa
 
 # Final MAF
 ls -lh results/last_alignment/seq1_seq2_seq3_joined.maf

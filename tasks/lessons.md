@@ -17,6 +17,24 @@ Move them manually: `mv ncbi_dataset/data/<acc>/*.fna data/<acc>.fasta && rm -rf
 
 ---
 
+## [2026-04-04] Long-running jobs must use tmux on biohazard
+
+**Rule:** Any job expected to run for more than ~1 hour MUST be launched inside a `tmux` session.
+Background jobs spawned via Claude Code (`run_in_background`) are child processes of the
+session and get killed on disconnect — confirmed by 3 repeated kills of RepeatModeler.
+
+**How to apply:**
+```bash
+tmux new-session -s <name>    # create session
+# run commands inside tmux
+# Ctrl-b d to detach (keeps running)
+tmux attach -t <name>         # reconnect later
+```
+For recovery after a kill: RepeatModeler supports `-recoverDir <RM_dir>` to resume from
+checkpoint. Look for `RM_*.*/` in `results/repeat_modeler/`.
+
+---
+
 ## [2026-04-01] Shared machine CPU policy (biohazard)
 
 **Rule:** Use < 1/4 of 64 cores = < 16 cores per job. Set to 8 threads in all scripts.
