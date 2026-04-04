@@ -28,7 +28,7 @@ LOG_FILE="$LOG_DIR/repeat_modeler_${TIMESTAMP}.log"
 REF_FASTA="$DATA_DIR/$1"
 REF_BASENAME=$(basename "$REF_FASTA" .fasta)
 DB_BASENAME="$REF_BASENAME"
-LIBRARY_FA="families.fa"
+LIBRARY_FA="${DB_BASENAME}-families.fa"  # RepeatModeler 2.0.x names output <db>-families.fa
 LIBRARY_PATH="$REPEAT_RESULTS_DIR/$LIBRARY_FA"
 THREADS=8
 
