@@ -69,17 +69,29 @@ on session disconnect. All long-running jobs MUST be launched inside `tmux`.
 - Attempt 1 (2026-04-01): exit 127 — BuildDatabase not found (module not loaded)
 - Attempt 2 (2026-04-01 02:19): killed at round-6 ~batch 995/9003 (session disconnect)
 - Attempt 3 (2026-04-04 07:01): resumed via -recoverDir; killed at round-6 ~batch 1596/9126
-- Attempt 4 (2026-04-04): resumed via -recoverDir in tmux session "repeatmodeler" ← CURRENT
+- Attempt 4 (2026-04-04): resumed via -recoverDir in tmux session "repeatmodeler" — **COMPLETED 2026-04-06 04:28**
 
-**G. rosea:** round-6 in progress (3rd recovery attempt, tmux session)
-**G. margarita:** queued
-**D. heterogama:** queued
+**Results (all complete ✓):**
+| Species | Library | Families | Finished |
+|---|---|---|---|
+| G. rosea (GCA_003550325.1) | GCA_003550325.1-families.fa | 4,898 | 2026-04-06 04:28 (36h runtime) |
+| G. margarita (GCA_009809945.1) | GCA_009809945.1-families.fa | 4,290 | 2026-04-08 07:46 |
+| D. heterogama (GCA_910591775.1) | GCA_910591775.1-families.fa | 2,359 | 2026-04-09 01:50 (~18h runtime) |
 
-Estimated completion: ~5 days total from start
-- Merge command: `cat results/repeat_modeler/GCA_003550325.1-families.fa results/repeat_modeler/GCA_009809945.1-families.fa results/repeat_modeler/GCA_910591775.1-families.fa > results/repeat_modeler/merged_library.fa`
+**Merge (completed 2026-04-10):**
+```
+cat results/repeat_modeler/GCA_003550325.1-families.fa \
+    results/repeat_modeler/GCA_009809945.1-families.fa \
+    results/repeat_modeler/GCA_910591775.1-families.fa \
+    > results/repeat_modeler/merged_library.fa
+# Total: 11,547 consensus sequences
+```
 
 ### Phase 5: RepeatMasker
-- [ ] `bash scripts/repeat_masking.sh results/repeat_modeler/merged_library.fa GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`
+- [x] Launched 2026-04-10 in tmux session "repeatmasker"
+- Command: `bash scripts/repeat_masking.sh results/repeat_modeler/merged_library.fa GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`
+- Library: `results/repeat_modeler/merged_library.fa` (11,547 families from all 3 species)
+- Status: **running** (G. rosea first)
 
 ### Phase 6: BED conversion
 - [ ] `bash scripts/bed.sh`

@@ -1,7 +1,7 @@
 # Outgroup Analysis via Genomic Fossils
 
 Project started: 2025-12-16.
-Last update: 2026-03-01 Ryota Ishii
+Last update: 2026-04-10 Ryota Ishii
 
 Identifies the plausible outgroup among three taxa by detecting shared
 retrotransposon insertions (SINEs/LINEs) as phylogenetic markers in
@@ -109,8 +109,19 @@ Output: `results/repeat_modeler/<genome>-families.fa`
 
 ### 4. Soft-mask all three genomes
 
+When running multiple species, first merge the per-species libraries:
+
 ```bash
-bash repeat_masking.sh results/repeat_modeler/<genome>-families.fa \
+cat results/repeat_modeler/A-families.fa \
+    results/repeat_modeler/B-families.fa \
+    results/repeat_modeler/C-families.fa \
+    > results/repeat_modeler/merged_library.fa
+```
+
+Then run RepeatMasker with the merged library:
+
+```bash
+bash repeat_masking.sh results/repeat_modeler/merged_library.fa \
     GCA_009914755.4.fasta GCA_028858775.2.fasta GCA_028885655.2.fasta
 ```
 
