@@ -87,11 +87,37 @@ cat results/repeat_modeler/GCA_003550325.1-families.fa \
 # Total: 11,547 consensus sequences
 ```
 
-### Phase 5: RepeatMasker
-- [x] Launched 2026-04-10 in tmux session "repeatmasker"
+### Phase 5: RepeatMasker ✓
 - Command: `bash scripts/repeat_masking.sh results/repeat_modeler/merged_library.fa GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`
 - Library: `results/repeat_modeler/merged_library.fa` (11,547 families from all 3 species)
-- Status: **running** (G. rosea first)
+
+| Species | Masked file | Size | Finished |
+|---|---|---|---|
+| G. rosea | GCA_003550325.1.fasta.masked | 554 MB | 2026-04-10 09:21 |
+| G. margarita | GCA_009809945.1.fasta.masked | 753 MB | 2026-04-10 15:50 |
+| D. heterogama | GCA_910591775.1.fasta.masked | 185 MB | 2026-04-10 17:11 |
+
+### Phase 6: BED conversion ✓
+- Command: `bash scripts/bed.sh`
+- Completed: 2026-04-11
+
+| BED file | Repeat annotations |
+|---|---|
+| GCA_003550325.1.bed | 1,776,904 |
+| GCA_009809945.1.bed | 2,433,649 |
+| GCA_910591775.1.bed | 522,945 |
+
+### Phase 7: Alignment Run 1 (G. rosea as ref)
+- [x] Launched 2026-04-11 in tmux session "alignment"
+- Command: `bash scripts/align.sh GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`
+- Log: `log/last_align_20260411_005613.log`
+- Status: **running** (lastdb step)
+- After completion: auto-renamed to `results/last_alignment_rosea_ref`
+
+### Phase 8: Alignment Run 2 (G. margarita as ref)
+- [ ] Queued in same tmux session after Run 1
+- Command: `bash scripts/align.sh GCA_009809945.1.fasta GCA_003550325.1.fasta GCA_910591775.1.fasta`
+- After completion: auto-renamed to `results/last_alignment_margarita_ref`
 
 ### Phase 6: BED conversion
 - [ ] `bash scripts/bed.sh`
