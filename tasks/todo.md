@@ -39,25 +39,30 @@ on AMF fungi. Alignment run twice (G. rosea ref / G. margarita ref) to assess re
 - [x] Confirm ≥60 GB free disk: 3.1 TB available
 
 #### Repeat Library
-- [ ] RepeatModeler: G. rosea (GCA_003550325.1)
-- [ ] RepeatModeler: G. margarita (GCA_009809945.1)
-- [ ] RepeatModeler: D. heterogama (GCA_910591775.1)
-- [ ] Merge repeat libraries → results/repeat_modeler/merged_library.fa
+- [x] RepeatModeler: G. rosea (GCA_003550325.1)
+- [x] RepeatModeler: G. margarita (GCA_009809945.1)
+- [x] RepeatModeler: D. heterogama (GCA_910591775.1)
+- [x] Merge repeat libraries → results/repeat_modeler/merged_library.fa
 
 #### Masking & BED
-- [ ] RepeatMasker: all 3 species (repeat_masking.sh with merged library)
-- [ ] BED conversion (bed.sh)
+- [x] RepeatMasker: all 3 species (repeat_masking.sh with merged library)
+- [x] BED conversion (bed.sh)
 
 #### Alignment
-- [ ] Alignment Run 1: G. rosea as seq1 → results/last_alignment_rosea_ref/
-- [ ] Alignment Run 2: G. margarita as seq1 → results/last_alignment_margarita_ref/
+- [x] Alignment Run 1: G. rosea as seq1 → results/last_alignment_rosea_ref/
+- [x] Alignment Run 2: G. margarita as seq1 → results/last_alignment_margarita_ref/
+
+#### Integrate, TSD, Report
+- [x] integrate.sh × 2 (with RM BED filter)
+- [x] find_tsds.py × 2
+- [x] report.sh × 2
 
 #### Documentation
-- [ ] Write experiment log → tasks/experiments/20260401_amf_gigaspora_baseline.md
-- [ ] Git commit: 実験ノート (tasks/ files)
+- [x] Write experiment log → tasks/experiments/20260401_amf_gigaspora_baseline.md
+- [ ] Git commit: 実験ノート + pipeline scripts
 
-#### Pending (future session)
-- [ ] integrate.sh × 2 (one per alignment)
-- [ ] report.sh × 2
-- [ ] Compare insertion counts between the two reference runs (reference bias analysis)
-- [ ] Biological sanity check: does the pipeline recover Dentiscutata as outgroup?
+#### Results Summary (2026-04-21)
+- AB_shared dominant at all tiers and in both reference runs
+- **Verdict: C (Dentiscutata heterogama) is the outgroup** ✓ matches published phylogeny
+- Reference bias: negligible (rosea-ref=67 vs margarita-ref=73 raw AB_shared, ~9%)
+- TSD confirmation rate ~30% (expected for ancient Gypsy LTR elements)

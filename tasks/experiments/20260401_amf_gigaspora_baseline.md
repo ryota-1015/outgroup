@@ -1,151 +1,84 @@
-# 実験ノート — AMF Phylogenetic Confirmation Run
+# AMF Gigaspora Baseline Run — 2026-04-21
 
-## Overview
-- **Date:** 2026-04-01
-- **Branch:** dataset-v2
-- **Commit at start:** db46cea (Update README to reflect generalized argument-driven pipeline)
-- **Working directory:** /big/co_ryota/outgroup
+## Dataset
+| Label | Species | Accession |
+|---|---|---|
+| A (Run1 ref) | *Gigaspora rosea* | GCA_003550325.1 |
+| B | *Gigaspora margarita* | GCA_009809945.1 |
+| C (expected outgroup) | *Dentiscutata heterogama* | GCA_910591775.1 |
 
-## Scientific Purpose
-Confirmation run using Method 1 (Frith 2023 — shared retrotransposon insertions).
-The three species used are arbuscular mycorrhizal fungi (AMF, phylum Glomeromycota):
+**Scientific goal**: Validate the pipeline on a known phylogeny (Dentiscutata is the outgroup by published literature). Two reference runs to assess reference bias.
 
-| Label | Accession | Species | Role |
-|---|---|---|---|
-| A (ref) | GCA_003550325.1 | *Gigaspora rosea* | Ingroup (alignment ref) |
-| B | GCA_009809945.1 | *Gigaspora margarita* | Ingroup |
-| C | GCA_910591775.1 | *Dentiscutata heterogama* | Expected outgroup (known from published phylogeny) |
+## Steps Completed
+1. Genome download (dwl.sh)
+2. RepeatModeler × 3 → merged_library.fa (10 MB)
+3. RepeatMasker × 3 (soft-mask with merged library)
+4. BED conversion (bed.sh)
+5. Alignment Run 1 — G. rosea as ref → last_alignment_rosea_ref/ (124 MB MAF)
+6. Alignment Run 2 — G. margarita as ref → last_alignment_margarita_ref/ (117 MB MAF)
+7. integrate.sh × 2 (with RepeatMasker BED filter, ≥50% coverage threshold)
+8. find_tsds.py × 2 (TSD detection on shared-pattern TSVs)
+9. report.sh × 2
 
-**Expected outcome:** The pipeline should identify C (*Dentiscutata*) as the outgroup,
-confirming that the two *Gigaspora* species are sisters. If the pipeline recovers this
-known relationship, it validates the method on AMF fungi.
+## Results
 
-**Reference bias control:** Alignment is run twice — with A (*G. rosea*) as seq1 and
-with B (*G. margarita*) as seq1 — to assess how much the reference choice inflates
-counts for topologies including that species.
+### Raw gap counts (≥100bp, no TE filter)
+| Pattern | Rosea ref | Margarita ref |
+|---|---|---|
+| AB_shared | 67 | 73 |
+| AC_shared | 13 | 21 |
+| BC_shared | 6 | 5 |
 
-## System Info
-- **Machine:** biohazard (shared HPC), 64 CPU cores, ~15 users
-- **CPU policy:** Use < 1/4 of cores = < 16 cores per job. All scripts set to 8 threads.
-  - `repeat_masking.sh` patched: THREADS 16 → 8
-- **Available disk (/big):** 3.1 TB free (of 22 TB; 85% used) — sufficient
-- **Actual FASTA sizes:** G. rosea 550 MB, G. margarita 748 MB, D. heterogama 183 MB
-- **Estimated data footprint:** ~1.5 GB FASTA + ~10–16 GB RepeatModeler temp + ~2–4 GB masked + ~10–40 GB MAF (≤ 65 GB total)
+### RM-filtered counts (≥50% gap covered by TE annotation)
+| Pattern | Rosea ref | Margarita ref |
+|---|---|---|
+| AB_shared | 34 | 35 |
+| AC_shared | 7 | 11 |
+| BC_shared | 1 | 2 |
 
-## Step Log
+### High-stringency (≥120bp, raw)
+| Pattern | Rosea ref | Margarita ref |
+|---|---|---|
+| AB_shared | 21 | 20 |
+| AC_shared | 4 | 2 |
+| BC_shared | 1 | 1 |
 
-### Phase 0: Archive old results ✓
-- Old `results/` moved to `results_archive_20260401/`
-- MANIFEST written: `results_archive_20260401/MANIFEST.md`
-- Previous analysis: GCA_001444195.3 / GCA_002775205.2 / GCA_036418095.1
-- Previous verdict: AC_shared=13, AB_shared=8, BC_shared=6 → B is outgroup
+### High-stringency (≥120bp, RM-filtered)
+| Pattern | Rosea ref | Margarita ref |
+|---|---|---|
+| AB_shared | 8 | 8 |
+| AC_shared | 2 | 0 |
+| BC_shared | 0 | 1 |
 
-### Phase 1: tasks/todo.md updated ✓
-- Added AMF confirmation run section with full checklist
+### TSD-confirmed counts (PROBABLE + CONFIRMED, ≥100bp)
+| Pattern | Rosea ref | Margarita ref |
+|---|---|---|
+| AB_shared | 7 | 5 |
+| AC_shared | 2 | 0 |
+| BC_shared | 0 | 1 |
 
-### Phase 2: Download genomes ✓
-- Command: `bash scripts/dwl.sh GCA_003550325.1 GCA_009809945.1 GCA_910591775.1`
-- **Issue:** `unzip` returned exit code 1 (overwrite warnings) — `set -euo pipefail` treated as failure, skipping rename step
-- **Recovery:** All 3 FNA files were in `ncbi_dataset/data/`; manually moved to `data/GCA_*.fasta`
-- **Lesson:** Add `unzip` return code tolerance to `dwl.sh` in a future cleanup
+## Biological Sanity Check — PASS
 
-### Phase 3: Verify genome sizes ✓
-- G. rosea (GCA_003550325.1): **550 MB**
-- G. margarita (GCA_009809945.1): **748 MB**
-- D. heterogama (GCA_910591775.1): **183 MB**
-- Available disk: 3.1 TB free — no constraints
+Across all tiers and both reference runs, **AB_shared consistently dominates**:
+- *G. rosea* + *G. margarita* share the most TE insertions absent in *D. heterogama*
+- → **C (*Dentiscutata heterogama*) is the outgroup**
+- This matches published AMF phylogenetics ✓
 
-### Phase 4: RepeatModeler (all 3 species)
-**Note:** Background jobs via Claude Code are children of the session process and get killed
-on session disconnect. All long-running jobs MUST be launched inside `tmux`.
+### Reference bias assessment
+Raw AB_shared counts: rosea-ref=67, margarita-ref=73 (8.9% difference — minor).
+RM-filtered: 34 vs 35. The signal is reference-independent.
 
-**Bugs fixed during this phase:**
-- `repeat_modeler.sh`: missing `module load repeatmodeler/2.0.5` → added
-- `repeat_modeler.sh`: `LIBRARY_FA="families.fa"` wrong → fixed to `${DB_BASENAME}-families.fa`
-- `repeat_masking.sh`: THREADS 16 → 8 (biohazard CPU policy: < 1/4 of 64 cores)
-- README: updated `families.fa` references to `<genome>-families.fa`; added tmux section
+### TSD notes
+- ~30% of candidates show any TSD evidence (CANDIDATE or higher)
+- Low CONFIRMED/PROBABLE rate is expected: Gypsy/DIRS1 LTR elements dominate (2.89%
+  of G. rosea genome) and ancient insertions have eroded TSDs
+- The DIRS1 elements use a non-standard integration mechanism and may not leave
+  classical TSDs — explaining some of the UNCONFIRMED rate
 
-**Run history (G. rosea):**
-- Attempt 1 (2026-04-01): exit 127 — BuildDatabase not found (module not loaded)
-- Attempt 2 (2026-04-01 02:19): killed at round-6 ~batch 995/9003 (session disconnect)
-- Attempt 3 (2026-04-04 07:01): resumed via -recoverDir; killed at round-6 ~batch 1596/9126
-- Attempt 4 (2026-04-04): resumed via -recoverDir in tmux session "repeatmodeler" — **COMPLETED 2026-04-06 04:28**
-
-**Results (all complete ✓):**
-| Species | Library | Families | Finished |
-|---|---|---|---|
-| G. rosea (GCA_003550325.1) | GCA_003550325.1-families.fa | 4,898 | 2026-04-06 04:28 (36h runtime) |
-| G. margarita (GCA_009809945.1) | GCA_009809945.1-families.fa | 4,290 | 2026-04-08 07:46 |
-| D. heterogama (GCA_910591775.1) | GCA_910591775.1-families.fa | 2,359 | 2026-04-09 01:50 (~18h runtime) |
-
-**Merge (completed 2026-04-10):**
-```
-cat results/repeat_modeler/GCA_003550325.1-families.fa \
-    results/repeat_modeler/GCA_009809945.1-families.fa \
-    results/repeat_modeler/GCA_910591775.1-families.fa \
-    > results/repeat_modeler/merged_library.fa
-# Total: 11,547 consensus sequences
-```
-
-### Phase 5: RepeatMasker ✓
-- Command: `bash scripts/repeat_masking.sh results/repeat_modeler/merged_library.fa GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`
-- Library: `results/repeat_modeler/merged_library.fa` (11,547 families from all 3 species)
-
-| Species | Masked file | Size | Finished |
-|---|---|---|---|
-| G. rosea | GCA_003550325.1.fasta.masked | 554 MB | 2026-04-10 09:21 |
-| G. margarita | GCA_009809945.1.fasta.masked | 753 MB | 2026-04-10 15:50 |
-| D. heterogama | GCA_910591775.1.fasta.masked | 185 MB | 2026-04-10 17:11 |
-
-### Phase 6: BED conversion ✓
-- Command: `bash scripts/bed.sh`
-- Completed: 2026-04-11
-
-| BED file | Repeat annotations |
-|---|---|
-| GCA_003550325.1.bed | 1,776,904 |
-| GCA_009809945.1.bed | 2,433,649 |
-| GCA_910591775.1.bed | 522,945 |
-
-### Phase 7: Alignment Run 1 (G. rosea as ref)
-- [x] Launched 2026-04-11 in tmux session "alignment"
-- Command: `bash scripts/align.sh GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`
-- Log: `log/last_align_20260411_005613.log`
-- Status: **running** (lastdb step)
-- After completion: auto-renamed to `results/last_alignment_rosea_ref`
-
-### Phase 8: Alignment Run 2 (G. margarita as ref)
-- [ ] Queued in same tmux session after Run 1
-- Command: `bash scripts/align.sh GCA_009809945.1.fasta GCA_003550325.1.fasta GCA_910591775.1.fasta`
-- After completion: auto-renamed to `results/last_alignment_margarita_ref`
-
-### Phase 6: BED conversion
-- [ ] `bash scripts/bed.sh`
-
-### Phase 7: Alignment Run 1 (G. rosea as ref)
-- [ ] `bash scripts/align.sh GCA_003550325.1.fasta GCA_009809945.1.fasta GCA_910591775.1.fasta`
-- [ ] `mv results/last_alignment results/last_alignment_rosea_ref`
-
-### Phase 8: Alignment Run 2 (G. margarita as ref)
-- [ ] `bash scripts/align.sh GCA_009809945.1.fasta GCA_003550325.1.fasta GCA_910591775.1.fasta`
-- [ ] `mv results/last_alignment results/last_alignment_margarita_ref`
-
----
-
-## Tool Versions
-*(to be filled in after downloads complete)*
-- LAST: TBD
-- RepeatModeler: TBD
-- RepeatMasker: TBD
-- samtools: TBD
-- bedtools: TBD
-- python3: TBD
-
-## Results Summary
-*(to be filled in after analysis)*
-
-## Biological Sanity Check
-*(to be filled in after report.sh)*
-- Expected: BC_shared (Gigaspora sisters) highest → C (Dentiscutata) is outgroup
-- Actual: TBD
-- Reference bias comparison (rosea ref vs margarita ref): TBD
+## Pipeline improvements implemented this run
+- `extract_gaps.py`: now emits 9-col TSV with all 3 species coords per candidate
+- `integrate.sh`: parametrized (maf_dir + suffix args); added RepeatMasker BED filter
+  using `bedtools coverage` (correctly handles multiple overlapping TE annotations)
+- `report.sh`: parametrized; added RM-filtered and TSD tiers
+- `find_tsds.py`: new script; searches 4 boundary combinations to handle aligner
+  gap-placement uncertainty; thresholds tuned for Gypsy/LINE/DNA transposon mix

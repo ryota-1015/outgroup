@@ -4,6 +4,11 @@ Usage:        python3 extract_gaps.py <maf_file> <min_len> <masked_A> <masked_B>
 Example:      python3 extract_gaps.py seq1_seq2_seq3_joined.maf 50 \
                   A.fasta.masked B.fasta.masked C.fasta.masked results/candidate_insertions_50bp
 Dependencies: Python 3 standard library; samtools faidx must have been run on each masked FASTA
+
+Output per pattern (e.g. AB_shared):
+  pattern_AB_shared_50bp.bed  — 4-col BED of primary species coords (for bedtools)
+  pattern_AB_shared_50bp.tsv  — 9-col TSV with all three species coords (for TSD script)
+    cols: pri_chrom pri_start pri_end pattern sec_chrom sec_start sec_end abs_chrom abs_pos
 """
 
 import sys
@@ -16,11 +21,6 @@ def usage():
         "<masked_A> <masked_B> <masked_C> <output_dir>",
         file=sys.stderr,
     )
-    print(
-        "Example: python3 extract_gaps.py joined.maf 50 "
-        "A.fasta.masked B.fasta.masked C.fasta.masked out/",
-        file=sys.stderr,
-    )
     sys.exit(1)
 
 
@@ -29,12 +29,6 @@ def usage():
 # ---------------------------------------------------------------------------
 
 def build_species_map(fasta_paths):
-    """
-    Read <fasta>.fai for each path in fasta_paths (labelled A, B, C).
-    Returns:
-        seq_to_species : dict  seq_name -> "A" | "B" | "C"
-        label_to_chrom : dict  label -> {chrom: True, ...}  (for reference lookup)
-    """
     labels = ("A", "B", "C")
     seq_to_species = {}
     label_to_chrom = {lbl: set() for lbl in labels}
@@ -75,7 +69,7 @@ def cum_non_gap(seq):
 
 
 # ---------------------------------------------------------------------------
-# MAF parsing and pattern detection
+# Pattern definitions
 # ---------------------------------------------------------------------------
 
 PATTERNS = {
@@ -87,16 +81,22 @@ PATTERNS = {
     "C_only":    [False, False, True ],
 }
 
-# Which species label contributes genomic coordinates for each pattern
-PATTERN_REF = {
-    "BC_shared": "B",
-    "B_only":    "B",
-    "C_only":    "C",
-    "AB_shared": "A",
-    "AC_shared": "A",
-    "A_only":    "A",
+# For each pattern: (primary_label, secondary_label_or_None, absent_label_or_None)
+# Primary = species whose coords go in the BED (PATTERN_REF from original code)
+# Secondary = other carrier species (if shared); absent = species with gap (empty site)
+PATTERN_ROLES = {
+    "AB_shared": ("A", "B", "C"),
+    "AC_shared": ("A", "C", "B"),
+    "BC_shared": ("B", "C", "A"),
+    "A_only":    ("A", None, None),
+    "B_only":    ("B", None, None),
+    "C_only":    ("C", None, None),
 }
 
+
+# ---------------------------------------------------------------------------
+# MAF parsing and pattern detection
+# ---------------------------------------------------------------------------
 
 def parse_maf(maf_path, min_len, seq_to_species, output_dir):
     block = {}
@@ -113,7 +113,6 @@ def parse_maf(maf_path, min_len, seq_to_species, output_dir):
             elif line.strip() == "" and block:
                 process_block(block, min_len, output_dir)
                 block = {}
-    # handle file that doesn't end with blank line
     if block:
         process_block(block, min_len, output_dir)
 
@@ -123,10 +122,7 @@ def process_block(block, min_len, output_dir):
         return
 
     seq_len = len(block["A"]["seq"])
-
-    # Precompute cumulative non-gap counts for each species
     cum = {lbl: cum_non_gap(block[lbl]["seq"]) for lbl in ("A", "B", "C")}
-
     current_starts = {key: -1 for key in PATTERNS}
 
     for i in range(seq_len):
@@ -138,14 +134,35 @@ def process_block(block, min_len, output_dir):
                     current_starts[key] = i
             else:
                 if current_starts[key] != -1:
-                    ref_lbl  = PATTERN_REF[key]
-                    ref_data = block[ref_lbl]
-                    g_start  = ref_data["start"] + cum[ref_lbl][current_starts[key]]
-                    g_end    = ref_data["start"] + cum[ref_lbl][i]
+                    i_start = current_starts[key]
+                    pri_lbl, sec_lbl, abs_lbl = PATTERN_ROLES[key]
+
+                    pri  = block[pri_lbl]
+                    g_start = pri["start"] + cum[pri_lbl][i_start]
+                    g_end   = pri["start"] + cum[pri_lbl][i]
 
                     if (g_end - g_start) >= min_len:
-                        fname = os.path.join(output_dir, f"pattern_{key}_{min_len}bp.bed")
-                        write_bed(fname, ref_data["chrom"], g_start, g_end, f"pattern_{key}")
+                        # 4-col BED (primary coords)
+                        bed_path = os.path.join(output_dir, f"pattern_{key}_{min_len}bp.bed")
+                        write_bed(bed_path, pri["chrom"], g_start, g_end, f"pattern_{key}")
+
+                        # 9-col TSV (all three species coords)
+                        tsv_path = os.path.join(output_dir, f"pattern_{key}_{min_len}bp.tsv")
+                        if sec_lbl:
+                            sec = block[sec_lbl]
+                            sec_start = sec["start"] + cum[sec_lbl][i_start]
+                            sec_end   = sec["start"] + cum[sec_lbl][i]
+                            abs_data  = block[abs_lbl]
+                            # absent species has all gaps here → position doesn't advance
+                            abs_pos   = abs_data["start"] + cum[abs_lbl][i_start]
+                            write_tsv(tsv_path,
+                                      pri["chrom"], g_start, g_end, key,
+                                      sec["chrom"], sec_start, sec_end,
+                                      abs_data["chrom"], abs_pos)
+                        else:
+                            write_tsv(tsv_path,
+                                      pri["chrom"], g_start, g_end, key,
+                                      ".", ".", ".", ".", ".")
 
                     current_starts[key] = -1
 
@@ -153,6 +170,18 @@ def process_block(block, min_len, output_dir):
 def write_bed(filepath, chrom, start, end, label):
     with open(filepath, "a") as fh:
         fh.write(f"{chrom}\t{start}\t{end}\t{label}\n")
+
+
+def write_tsv(filepath, pri_chrom, pri_start, pri_end, pattern,
+              sec_chrom, sec_start, sec_end, abs_chrom, abs_pos):
+    # Write header on first call (file doesn't exist yet)
+    write_header = not os.path.exists(filepath)
+    with open(filepath, "a") as fh:
+        if write_header:
+            fh.write("pri_chrom\tpri_start\tpri_end\tpattern\t"
+                     "sec_chrom\tsec_start\tsec_end\tabs_chrom\tabs_pos\n")
+        fh.write(f"{pri_chrom}\t{pri_start}\t{pri_end}\t{pattern}\t"
+                 f"{sec_chrom}\t{sec_start}\t{sec_end}\t{abs_chrom}\t{abs_pos}\n")
 
 
 # ---------------------------------------------------------------------------
@@ -172,11 +201,12 @@ if __name__ == "__main__":
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Remove stale BED files so we don't append to previous runs
+    # Remove stale output files so we don't append to previous runs
     for key in PATTERNS:
-        bed_path = os.path.join(output_dir, f"pattern_{key}_{min_len}bp.bed")
-        if os.path.exists(bed_path):
-            os.remove(bed_path)
+        for ext in ("bed", "tsv"):
+            p = os.path.join(output_dir, f"pattern_{key}_{min_len}bp.{ext}")
+            if os.path.exists(p):
+                os.remove(p)
 
     seq_to_species, _ = build_species_map([masked_a, masked_b, masked_c])
     parse_maf(maf_file, min_len, seq_to_species, output_dir)
