@@ -1,7 +1,7 @@
 # Outgroup Analysis via Genomic Fossils
 
 Project started: 2025-12-16.
-Last update: 2026-04-10 Ryota Ishii
+Last update: 2026-04-21 Ryota Ishii
 
 Identifies the plausible outgroup among three taxa by detecting shared
 retrotransposon insertions (SINEs/LINEs) as phylogenetic markers in
@@ -195,22 +195,26 @@ outgroup:
 ## Quick result checks
 
 ```bash
-# Repeat library
+# Repeat libraries (all 3 species)
 ls -lh results/repeat_modeler/*-families.fa
 
-# Final MAF
-ls -lh results/last_alignment/seq1_seq2_seq3_joined.maf
+# Final MAFs (two reference runs)
+ls -lh results/last_alignment_rosea_ref/seq1_seq2_seq3_joined.maf
+ls -lh results/last_alignment_margarita_ref/seq1_seq2_seq3_joined.maf
 
-# Insertion counts per pattern (100 bp)
-grep -c ">" results/candidate_insertions_100bp/*.fasta
+# Insertion counts per pattern (100 bp, rosea ref)
+grep -c ">" results/candidate_insertions_100bp_rosea_ref/*.fasta
 
-# Verdict
-cat log/final_outgroup_report.log
+# Verdict reports
+cat log/final_outgroup_report_rosea_ref.log
+cat log/final_outgroup_report_margarita_ref.log
 
-# Lengths of longest AC_shared markers
-awk '/^>/ {if (seqlen) print seqlen; seqlen=0; next} \
-     {seqlen += length($0)} END {print seqlen}' \
-    results/candidate_insertions_100bp/AC_shared.fasta | sort -rn | head -5
+# TSD confirmation summary
+cat log/tsd_summary_rosea_ref.tsv
+cat log/tsd_summary_margarita_ref.tsv
+
+# Experiment log (tracked in git)
+cat tasks/experiments/20260401_amf_gigaspora_baseline.md
 ```
 
 ---
