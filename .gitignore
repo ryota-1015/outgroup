@@ -1,4 +1,8 @@
-data/
+data/*
+!data/trios.tsv
+!data/tmp/
+data/tmp/*
+!data/tmp/*.txt
 results/
 log/
 *.zip

@@ -66,3 +66,26 @@ on AMF fungi. Alignment run twice (G. rosea ref / G. margarita ref) to assess re
 - **Verdict: C (Dentiscutata heterogama) is the outgroup** ✓ matches published phylogeny
 - Reference bias: negligible (rosea-ref=67 vs margarita-ref=73 raw AB_shared, ~9%)
 - TSD confirmation rate ~30% (expected for ancient Gypsy LTR elements)
+
+---
+
+## [2026-06-08] Multi-trio framework
+
+### Goal
+Scaffold the outgroup pipeline so it can be applied to an 81-trio dataset
+sourced from `/home/mrk/sbst/evo-subster/results/` (cnidaria, fungi,
+arthropoda, oomycota, apicomplexa, phaeophyceae, porifera). Framework
+only — no trios executed.
+
+### Checklist
+- [x] Parse `data/tmp/ls_results_summary_all.txt` → `data/trios.tsv`
+      (81 trios × 3 roles; AMF triple self-test). `scripts/build_trios_tsv.py`
+- [x] Wrap end-to-end driver `scripts/run_trio.sh <trio_name>` with
+      `--dry-run`, `--from <step>`, stale-dir guard, tmux warning.
+- [x] Dry-run verification on `Denhet1_Gigros2_Gigmar3`.
+- [x] Campaign 実験ノート: `tasks/experiments/2026-06-08_multitrio_campaign.md`
+- [x] README section "Multi-trio execution".
+- [ ] Commit framework PR on `dataset-v2`.
+- [ ] Open GitHub umbrella issue with 81-trio checklist grouped by clade.
+- [ ] First real-run trio (TBD — start with a small-genome apicomplexan or
+      re-key the existing AMF run under the new naming).

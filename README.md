@@ -219,6 +219,49 @@ cat tasks/experiments/20260401_amf_gigaspora_baseline.md
 
 ---
 
+## Multi-trio execution
+
+For applying the pipeline to many trios from the curated 81-trio dataset
+(see `tasks/experiments/2026-06-08_multitrio_campaign.md`), use the
+wrapper:
+
+```bash
+# 1. Build the trio inventory once from the listing files in data/tmp/
+python3 scripts/build_trios_tsv.py
+# → writes data/trios.tsv (trio_name, clade, role, code, accession, notes)
+
+# 2. Pick a trio and dry-run to see the planned commands
+bash scripts/run_trio.sh Denhet1_Gigros2_Gigmar3 --dry-run
+
+# 3. Real run (inside tmux — RepeatModeler + alignment can take days)
+tmux new -s Denhet1_Gigros2_Gigmar3
+bash scripts/run_trio.sh Denhet1_Gigros2_Gigmar3
+# Ctrl-b d to detach
+```
+
+`run_trio.sh` drives `dwl → repeat_modeler ×3 → mask → bed → align →
+rename → integrate → tsd → report`, isolating outputs under a
+`_<trio_name>` suffix:
+
+```
+results/last_alignment_<trio>/
+results/candidate_insertions_{50,100}bp_<trio>/
+log/final_outgroup_report_<trio>.log
+log/tsd_summary_<trio>.tsv
+log/run_trio_<trio>.{log,status}
+```
+
+Resume mid-pipeline with `--from <step>` (steps: `download`,
+`repeat_modeler`, `mask`, `bed`, `align`, `rename_align`, `integrate`,
+`tsd`, `report`). The wrapper refuses to start the `align` step when
+`results/last_alignment/` already exists, so a half-finished previous
+run won't be silently clobbered.
+
+Trios with shared species across the dataset (12 of 81) are flagged
+`dup_species_across_trios` in `data/trios.tsv`; their RepeatModeler step
+is a no-op on the second run because the per-accession library is
+already in `results/repeat_modeler/`.
+
 ## References
 
 - LAST: https://gitlab.com/mcfrith/last
