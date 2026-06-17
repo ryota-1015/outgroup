@@ -67,8 +67,11 @@ for ACCESSION_ID in "${ACCESSIONS[@]}"; do
     log_message "  SUCCESS: ZIP file downloaded."
 
     # --- Unzip and extract ---
+    # -o: overwrite without prompting. NCBI zips ship a top-level README.md and
+    # md5sum.txt that collide with prior downloads; without -o, unzip blocks on
+    # an interactive replace-prompt that nobody answers in a detached tmux.
     log_message "  Unzipping and extracting FASTA file..."
-    if ! unzip -q "$OUTPUT_ZIP" 2>> "$LOG_FILE"; then
+    if ! unzip -o -q "$OUTPUT_ZIP" 2>> "$LOG_FILE"; then
         log_message "  ERROR: Failed to unzip $OUTPUT_ZIP."
         rm -f "$OUTPUT_ZIP"
         continue
