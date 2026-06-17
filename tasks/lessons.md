@@ -63,6 +63,16 @@ unzip -o -q "$OUTPUT_ZIP" 2>> "$LOG_FILE"
 control (cron, tmux, CI), the `-o` flag is mandatory. Same goes for
 `tar --overwrite`, `cp -f`, etc. Pair it with `-q` for log hygiene.
 
+**Same-day sequel — subshell scope bug in the same function:** after the
+`-o` fix unblocked the unzip step, every accession then logged
+`Could not find *.fna in unzipped archive.` even though the file was
+clearly extracted. Root cause: `find ... | while read ; do VAR=...; done`
+runs the `while` body in a subshell because of the pipe, so `VAR` set
+inside the loop is lost in the parent. Replaced with command
+substitution: `VAR="$(find ... | head -n 1)"`. Lesson: **never assign a
+shell variable inside a `cmd | while read` body** — use process
+substitution `< <(cmd)` or capture the result with `$(...)` directly.
+
 ---
 
 ## [2026-06-17] Dry-run does not validate a wrapper

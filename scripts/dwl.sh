@@ -77,13 +77,11 @@ for ACCESSION_ID in "${ACCESSIONS[@]}"; do
         continue
     fi
 
-    FASTA_FILE_SOURCE=""
-    find ncbi_dataset/data/ -type f -name "*.fna" -print0 2>/dev/null | while IFS= read -r -d $'\0' FILE_PATH; do
-        if [ -n "$FILE_PATH" ]; then
-            FASTA_FILE_SOURCE="$FILE_PATH"
-            break
-        fi
-    done
+    # `find | while` runs the loop in a subshell, so assignments inside don't
+    # propagate to the parent — that silently emptied FASTA_FILE_SOURCE and
+    # made every download log "Could not find *.fna" even when the file was
+    # extracted correctly. Use command substitution instead.
+    FASTA_FILE_SOURCE="$(find ncbi_dataset/data/ -type f -name "*.fna" 2>/dev/null | head -n 1)"
 
     if [ -n "$FASTA_FILE_SOURCE" ]; then
         mv "$FASTA_FILE_SOURCE" "$OUTPUT_FILE" 2>> "$LOG_FILE"
