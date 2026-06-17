@@ -87,5 +87,32 @@ only — no trios executed.
 - [x] README section "Multi-trio execution".
 - [ ] Commit framework PR on `dataset-v2`.
 - [ ] Open GitHub umbrella issue with 81-trio checklist grouped by clade.
-- [ ] First real-run trio (TBD — start with a small-genome apicomplexan or
-      re-key the existing AMF run under the new naming).
+- [x] First real-run trio — pilot fleet defined (see below). Apicomplexan
+      Crypar trio kicks off first.
+
+---
+
+## [2026-06-17] Pilot fleet — 3 trios distant from AMF baseline
+
+### Goal
+Demonstrate the pipeline generalises across the eukaryotic tree by running
+three trios spanning two SAR lineages and one metazoan lineage — all
+maximally distant from the AMF (Glomeromycotina) baseline. Each trio has
+a published expected outgroup we can validate against.
+
+### Selection rationale (see plan file for full reasoning)
+1. **Crypar1_Cryhom2_Crycun3** — apicomplexa (SAR/Alveolata), ~9 MB genomes
+2. **Phyida1_Phycac2_Phyhed3** — oomycota (SAR/Stramenopila), ~80–100 MB
+3. **Dromel1_Drosim2_Drosec3** — arthropoda (Metazoa), ~150–180 MB; gold-standard known answer
+
+Sequential execution; one tmux session, one PR, one 実験ノート per trio.
+Estimated total wall-clock: ~9–13 days.
+
+### Checklist
+- [ ] Trio 1 — `Crypar1_Cryhom2_Crycun3`
+      (note: `tasks/experiments/2026-06-17_Crypar1_Cryhom2_Crycun3.md`)
+- [ ] Trio 2 — `Phyida1_Phycac2_Phyhed3`
+      (note: `tasks/experiments/<launch-date>_Phyida1_Phycac2_Phyhed3.md`)
+- [ ] Trio 3 — `Dromel1_Drosim2_Drosec3`
+      (note: `tasks/experiments/<launch-date>_Dromel1_Drosim2_Drosec3.md`)
+- [ ] Fleet wrap-up section in `tasks/experiments/2026-06-08_multitrio_campaign.md`

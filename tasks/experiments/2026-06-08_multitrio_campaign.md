@@ -136,11 +136,33 @@ No existing scripts were modified.
 
 ## Open items / not in this PR
 
-- No trios executed yet. First real run will pick a small-genome trio
-  (likely an apicomplexan or the existing AMF trio re-keyed under the
-  new naming) to shake out tmux/CPU discipline and the rename step.
 - Role-to-position convention (which species becomes the LAST
   reference) is fixed to "first code in the trio name". If a future
   trio benefits from a different reference choice, run with a
   temporarily-reordered trio name in `trios.tsv` and document the
   override in that trio's per-run note.
+
+## Executed trios
+
+Live log — one row per launched trio, expanded with verdict when each
+completes. Per-trio notes carry the detail.
+
+| Launched | Trio | Clade | Status | Verdict | Per-trio note |
+|---|---|---|---|---|---|
+| 2026-06-17 | Crypar1_Cryhom2_Crycun3 | apicomplexa | running | — | [2026-06-17_Crypar1_Cryhom2_Crycun3.md](2026-06-17_Crypar1_Cryhom2_Crycun3.md) |
+
+## Pilot fleet
+
+The first executed batch is a three-trio fleet chosen to demonstrate
+pipeline generality across the eukaryotic tree, deliberately distant
+from the AMF (Glomeromycotina) baseline:
+
+1. `Crypar1_Cryhom2_Crycun3` — apicomplexa (SAR/Alveolata). Smallest
+   genomes in the dataset; smoke-tests the wrapper end-to-end.
+2. `Phyida1_Phycac2_Phyhed3` — oomycota (SAR/Stramenopila). Second
+   SAR branch; well-characterised *Phytophthora*.
+3. `Dromel1_Drosim2_Drosec3` — arthropoda (Metazoa). Gold-standard
+   phylogenomic trio; *D. melanogaster* outgroup is textbook.
+
+Sequential, one tmux session per trio, one PR per trio. Estimated
+fleet wall-clock ≈ 9–13 days.
